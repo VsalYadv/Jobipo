@@ -1,0 +1,48 @@
+# React Native
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# macOS
+.DS_Store
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+*.iml
+.gradle/
+local.properties
+*.keystore
+*.jks
+
+# iOS
+ios/Pods/
+ios/build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xcuserstate
+project.xcworkspace/
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# C++/NDK build (causes long path issues!)
+android/app/.cxx/
+
+# Misc
+.env
+*.log
