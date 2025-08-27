@@ -21,10 +21,11 @@ const RegistrationS = ({navigation, route }) => {
       const { signIn } = useContext(AuthContext)
 
   const data = route.params
+  console.log("Route params in RegistrationS:", data);
   const [skill, setSkill] = useState('');
   const [formData, setFormData] = useState({ skills: []});
     const [experience, setExperience] = useState('');
-  const [userId, setUserId] = useState();
+  const [userId, setUserId] = useState(data?.userId || null);
   // const [selectedSkills, setSelectedSkills] = useState(JSON.parse(data?.skills) || []);
   const [open, setOpen] = useState(false);
 const [currentSalary, setCurrentSalary] = useState('');
@@ -57,23 +58,45 @@ const [englishSpeaking, setEnglishSpeaking] = useState('');
 
 
   
-    useEffect(() => {
-    const fetchUserId = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem('UserID');
-        if (storedUserId) {
-          setUserId(storedUserId);
-          console.log("storedUserId", storedUserId);
+    useFocusEffect(
+    useCallback(() => {
+      console.log("useFocusEffect triggered, data:", data);
+      const fetchUserId = async () => {
+        // Always try to get userId from route params first
+        if (data?.userId) {
+          setUserId(data.userId);
+          console.log("userId from route params:", data.userId);
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching userID from AsyncStorage:', error);
-      }
-    };
-    fetchUserId();
-  }, []);
+        
+        // Otherwise, fetch from AsyncStorage
+        try {
+          const storedUserId = await AsyncStorage.getItem('UserID');
+          console.log("STOREDUSER",storedUserId)
+          if (storedUserId) {
+            setUserId(storedUserId);
+            console.log("storedUserId", storedUserId);
+          }
+        } catch (error) {
+          console.error('Error fetching userID from AsyncStorage:', error);
+        }
+      };
+      fetchUserId();
+    }, [])
+  );
 
   console.log(data)
-      console.log("editprofile")
+  console.log("editprofile")
+  console.log("Current userId state:", userId);
+
+  // Add useEffect to handle route params changes
+  useEffect(() => {
+    console.log("useEffect triggered with data:", data);
+    if (data?.userId) {
+      console.log("Setting userId from route params in useEffect:", data.userId);
+      setUserId(data.userId);
+    }
+  }, [data]);
 
   useFocusEffect(
     useCallback(() => {
@@ -130,13 +153,27 @@ const [englishSpeaking, setEnglishSpeaking] = useState('');
 
 const handleSubmit = async () => {
 
-  if (!userId || selectedSkills.length === 0 || !experience) {
+  // Get userId from multiple sources if not available
+  let finalUserId = userId;
+  if (!finalUserId) {
+    finalUserId = data?.userId;
+  }
+  if (!finalUserId) {
+    try {
+      finalUserId = await AsyncStorage.getItem('UserID');
+    } catch (error) {
+      console.error('Error getting UserID from AsyncStorage:', error);
+    }
+  }
+
+  if (!finalUserId || selectedSkills.length === 0 || !experience) {
     Alert.alert('Please fill all fields');
     return;
   }
+  console.log("CHCKUSERID", finalUserId);
 
   const form = new FormData();
-  form.append('userId', userId);
+  form.append('userId', finalUserId);
   // form.append('skills', selectedSkills.join(', '));
   form.append('skills', JSON.stringify(selectedSkills));
   form.append('experience', experience);
@@ -144,6 +181,7 @@ const handleSubmit = async () => {
   form.append('englishSpeaking', englishSpeaking);  
 
 // console.log("currentSalary", form.get('current_salary'));
+console.log("USERDDETAILS",form)
 
 try {
     const response = await fetch('https://jobipo.com/api/v2/update-step-three', {
@@ -158,10 +196,12 @@ try {
     const res = JSON.parse(jsonString);
 
     console.log("res submit", res);
+    console.log("userId",userId)
 
     if (res && res.type === 'success') {
-  if (userId !== '' ) {
-    const formdata = { user_id:userId };
+  if (finalUserId !== '' ) {
+    const formdata = { user_id: finalUserId };
+    console.log("FRM",formdata)
 
     try {
       const response = await fetch('https://jobipo.com/api/v2/auto-login', {
@@ -259,9 +299,13 @@ try {
     dropdownIconColor="#535353"
   >
     <Picker.Item label="Select Experience" value="" enabled={false} />
-    {['0-1', '1-2', '2-3', '3-5', '5-7', '7-10'].map((exp) => (
-      <Picker.Item key={exp} label={`${exp} Year`} value={exp} />
-    ))}
+   {['Fresher','0-1', '1-2', '2-3', '3-5', '5-7', '7-10'].map((exp) => (
+  <Picker.Item 
+    key={exp} 
+    label={exp === 'Fresher' ? 'Fresher' : `${exp} Years`} 
+    value={exp} 
+  />
+))}
   </Picker>
 </View>
 

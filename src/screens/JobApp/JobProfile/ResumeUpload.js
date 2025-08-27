@@ -17,6 +17,10 @@ const ResumeUpload = ({ navigation, route }) => {
   const [fileUri, setFileUri] = useState(null);
   const [fileName, setFileName] = useState('');
   const [fileType, setFileType] = useState('');
+  const [fileSize, setFileSize] = useState(0); // Added fileSize state
+  const [isUploading, setIsUploading] = useState(false); // Added isUploading state
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
   const handleSelectFile = async () => {
     try {
@@ -28,6 +32,7 @@ const ResumeUpload = ({ navigation, route }) => {
       setFileUri(res[0].uri);
       setFileName(res[0].name);
       setFileType(res[0].type);
+      setFileSize(res[0].size); // Set file size
     } catch (err) {
       Alert.alert('Error selecting file', err.message);
     }
@@ -50,175 +55,152 @@ const ResumeUpload = ({ navigation, route }) => {
     }
   };
 
-//   const handleUpload = async () => {
-//   try {
-//     const userID = await AsyncStorage.getItem('UserID');
+  const handleUpload = async () => {
+    console.log('=== HANDLE UPLOAD START ===');
+    try {
+      const userID = await AsyncStorage.getItem('UserID');
+      console.log("1. User ID retrieved:", userID);
 
-//     if (!userID) {
-//       Alert.alert('Error', 'User ID not found. Please log in again.');
-//       return;
-//     }
+      if (!userID) {
+        console.log('2. ERROR: No User ID found');
+        Alert.alert('Error', 'User ID not found. Please log in again.');
+        return;
+      }
 
-//     if (fileUri) {
-//       const formData = new FormData();
-//       formData.append('image', {
-//         uri: fileUri,
-//         type: fileType,
-//         name: fileName,
-//       });
+      if (!fileUri) {
+        console.log('3. ERROR: No file URI');
+        Alert.alert('Please select a file to upload!');
+        return;
+      }
 
-//       formData.append('userID', userID); 
-// console.log(formData)
-//       const fileRes = await uploadImageOnServer(formData);
-//       console.log(fileRes);
+      console.log('4. File details before upload:');
+      console.log('   - File URI:', fileUri);
+      console.log('   - File Name:', fileName);
+      console.log('   - File Type:', fileType);
+      console.log('   - File Size:', fileSize);
 
-//       await fetch(`https://jobipo.com/api/v2/resume-upload`, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({
-//           ...jobSeekerData,
-//           cv: fileRes.message,
-//         }),
-//       })
-//       .then(res => res.json())
-//       .then(async(res) => {
-//         console.log('res', res);
-//         if (res) {
-//           await AsyncStorage.setItem('cv', fileName);
-//           Alert.alert('Resume uploaded successfully!');
-//           setFileUri(null);
-//           setFileName('');
-//           navigation.goBack();
-//         }
-//       })
-//       .catch(err => {
-//         console.log('update error', err);
-//         Alert.alert('Error updating details');
-//       });
+      // Check file size again before upload (only if we have a valid size)
+      if (fileSize > 0 && fileSize > MAX_FILE_SIZE) {
+        console.log('5. ERROR: File too large');
+        Alert.alert('File Too Large', `File size (${(fileSize / 1024 / 1024).toFixed(2)}MB) exceeds the maximum allowed size of 5MB.`);
+        return;
+      }
 
-//     } else {
-//       Alert.alert('Please select a file to upload!');
-//     }
-//   } catch (error) {
-//     console.log('handleUpload error:', error);
-//     Alert.alert('Something went wrong!');
-//   }
-// };
+      setIsUploading(true);
+      console.log('6. Starting upload process...');
 
+      // Create FormData for resume upload
+      const formData = new FormData();
+      console.log('7. FormData created');
+      
+      // Create the file object with proper structure
+      const fileObject = {
+        uri: fileUri,
+        type: fileType || 'application/pdf',
+        name: fileName,
+      };
+      
+      console.log('8. File object created:', fileObject);
+      console.log('9. File object validation:');
+      console.log('   - URI exists:', !!fileObject.uri);
+      console.log('   - Type exists:', !!fileObject.type);
+      console.log('   - Name exists:', !!fileObject.name);
+      
+      // Append the file
+      formData.append('image', fileObject);
+      console.log('10. File appended to FormData with key "image"');
+      
+      // Append user ID
+      formData.append('userID', userID);
+      console.log('11. UserID appended to FormData');
 
+      // Append other job seeker data as form fields
+      if (jobSeekerData) {
+        Object.keys(jobSeekerData).forEach(key => {
+          if (jobSeekerData[key] !== null && jobSeekerData[key] !== undefined) {
+            formData.append(key, jobSeekerData[key]);
+          }
+        });
+        console.log('12. Job seeker data appended to FormData');
+      }
 
+      // Log FormData contents for debugging
+      console.log('13. Final FormData contents:');
+      console.log('   - File URI:', fileUri);
+      console.log('   - File Type:', fileType);
+      console.log('   - File Name:', fileName);
+      console.log('   - File Size:', fileSize, 'bytes');
+      console.log('   - User ID:', userID);
+      console.log("sending",formData);
 
-const handleUpload = async () => {
-  try {
-    const userID = await AsyncStorage.getItem('UserID');
-    console.log("uiuiui",userID)
+      // Upload directly to resume-upload endpoint
+      console.log('14. Uploading file directly to resume-upload endpoint...');
+      const response = await fetch('https://jobipo.com/api/v2/resume-upload', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          // Don't set Content-Type header - let FormData set it automatically
+        },
+        body: formData,
+      });
 
-    if (!userID) {
-      Alert.alert('Error', 'User ID not found. Please log in again.');
-      return;
+      console.log('15. Response received');
+      console.log('16. Response status:', response.status);
+      console.log('17. Response status text:', response.statusText);
+      
+      const responseText = await response.text();
+      console.log('18. Raw response text:', responseText);
+
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log('19. Parsed response:', responseData);
+      } catch (error) {
+        console.log('19. ERROR parsing JSON response:', error);
+        Alert.alert('Error', 'Invalid server response');
+        return;
+      }
+
+      if (responseData && responseData.status === 1) {
+        console.log('20. SUCCESS: Resume uploaded successfully');
+        await AsyncStorage.setItem('cv', fileName);
+        Alert.alert('Success', 'Resume uploaded successfully!');
+        setFileUri(null);
+        setFileName('');
+        setFileType('');
+        setFileSize(0);
+        navigation.goBack();
+      } else {
+        console.log('20. ERROR: Resume upload failed');
+        const errorMessage = responseData?.message || 'Upload failed';
+        console.log('   - Error message:', errorMessage);
+        
+        // Check if the error is about file size
+        if (errorMessage.toLowerCase().includes('size') || errorMessage.toLowerCase().includes('kb') || errorMessage.toLowerCase().includes('mb')) {
+          Alert.alert('File Size Error', 'The file size exceeds the server limit. Please try a smaller file (under 5MB).');
+        } else {
+          Alert.alert('Upload Failed', errorMessage);
+        }
+      }
+
+    } catch (error) {
+      console.log('=== HANDLE UPLOAD ERROR ===');
+      console.log('Error details:', error);
+      console.log('Error message:', error.message);
+      console.log('Error stack:', error.stack);
+      Alert.alert('Error', 'Something went wrong during upload. Please try again.');
+    } finally {
+      setIsUploading(false);
+      console.log('=== HANDLE UPLOAD END ===');
     }
-
-    if (!fileUri) {
-      Alert.alert('Please select a file to upload!');
-      return;
-    }
-
-    // Step 1: Create FormData for imageUpload
-    const imageFormData = new FormData();
-    console.log('immgedatawer', imageFormData)
-
-    imageFormData.append('image', {
-      uri: fileUri,
-      type: fileType,
-      name: fileName,
-    });
-
-    console.log('imm', imageFormData)
-
-    // Step 2: Upload image
-    const uploadResponse = await fetch("https://jobipo.com/api/Agent/imageUpload", {
-      method: "POST",
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      body: imageFormData,
-    });
-    // console.log('uploadResponse',uploadResponse)
-    const fileRes = await uploadResponse.json();
-    console.log("Upload response:", fileRes);
-
-    if (!fileRes || !fileRes.message) {
-      Alert.alert('Upload failed.');
-      return;
-    }
-
-    // Step 3: Prepare form data for resume-upload
-    const resumeFormData = new FormData();
-    console.log('resumeFormData',resumeFormData)
-
-    // Append each field from jobSeekerData
-    // Object.entries(jobSeekerData).forEach(([key, value]) => {
-    //   if (value !== null && value !== undefined) {
-    //     resumeFormData.append(key, value);
-    //   }
-    // });
-
-    // Append uploaded file name/path
-    // resumeFormData.append('image', fileRes.message);
-    //   resumeFormData.append('userID', userID);
-
-
-    //resumeFormData.append('userID', userID);
-    resumeFormData.append('image', {
-  uri: fileUri,
-  type: fileType,
-  name: fileName,});
-resumeFormData.append('userID', userID);
-
-
-console.log('resumeFormDataafterappend',resumeFormData)
-//console.log(`CHECKKK' , );
-
-// for (let pair of resumeFormData._parts) {
-//   console.log(`${pair[0]}: ${pair[1]}`);
-// }
-
-    // Step 4: Send resume update with form-data
-    const updateRess = await fetch(`https://jobipo.com/api/v2/resume-upload`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    // body: JSON.stringify(resumeFormData) 
-    body: resumeFormData,
-    });
-
-    const updateJson = await updateRess.json();
-    console.log('Resume update response:', updateJson);
-
-    if (updateJson && updateJson.status === 1) {
-  await AsyncStorage.setItem('cv', fileName);
-  Alert.alert('Resume uploaded successfully!');
-  setFileUri(null);
-  setFileName('');
-  navigation.goBack();
-} else {
-  console.log('Resume update error:', updateJson.message);
-  Alert.alert('Upload failed(In KB)', updateJson.message || 'Something went wrong!');
-}
-
-  } catch (err) {
-    console.log('handleUpload error:', err);
-    Alert.alert('Something went wrong!');
-  }
-};
+  };
 
 
   const handleCancel = () => {
     setFileUri(null);
     setFileName('');
+    setFileType('');
+    setFileSize(0);
   };
 
   return (
@@ -235,11 +217,12 @@ console.log('resumeFormDataafterappend',resumeFormData)
           <Text style={styles.selectText}>Select Resume (PDF)</Text>
         </TouchableOpacity>
 
-        {fileUri && (
-          <View style={styles.fileDetails}>
-            <Text style={styles.fileName}>File: {fileName}</Text>
-          </View>
-        )}
+                 {fileUri && (
+           <View style={styles.fileDetails}>
+             <Text style={styles.fileName}>File: {fileName}</Text>
+             <Text style={styles.fileSize}>Size: {fileSize} bytes</Text>
+           </View>
+         )}
       </ScrollView>
 
       <View style={styles.removeContainer}>
@@ -249,12 +232,18 @@ console.log('resumeFormDataafterappend',resumeFormData)
         </TouchableOpacity>
       </View>
 
-      <View style={styles.SaveContainer}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleUpload}>
-          <UploadIcon name="upload" size={27} color="#fff" style={styles.icon} />
-          <Text style={styles.saveButtonText}>Upload Resume</Text>
-        </TouchableOpacity>
-      </View>
+             <View style={styles.SaveContainer}>
+         <TouchableOpacity 
+           style={[styles.saveButton, isUploading && styles.saveButtonDisabled]} 
+           onPress={handleUpload}
+           disabled={isUploading}
+         >
+           <UploadIcon name="upload" size={27} color="#fff" style={styles.icon} />
+           <Text style={styles.saveButtonText}>
+             {isUploading ? 'Uploading...' : 'Upload Resume'}
+           </Text>
+         </TouchableOpacity>
+       </View>
 
       </SafeAreaView>
     </>
@@ -297,6 +286,11 @@ const styles = StyleSheet.create({
   fileName: {
     fontSize: 16,
     color: '#333',
+    marginBottom: 5,
+  },
+  fileSize: {
+    fontSize: 14,
+    color: '#666',
   },
   saveButton: {
     flexDirection: 'row',
@@ -306,6 +300,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     justifyContent: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#ccc',
   },
   saveButtonText: {
     color: '#fff',

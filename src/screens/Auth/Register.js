@@ -18,6 +18,10 @@ import StepIndicator, { StepIndicator1, StepIndicator2, StepIndicator3 } from '.
 import LogoS from '../../components/Auth/LogoS';
 
 // Dummy Button Component (Replace with your actual Button component if you have one)
+const token = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+let notificationConsent = 1
+let useridUnique = ''
+let details = {}
 const Button = ({ onPress, text, style }) => (
   <TouchableOpacity style={[styles.buttonBase, style]} onPress={onPress}>
     <Text style={styles.buttonText}>{text}</Text>
@@ -68,24 +72,31 @@ const Register = ({ navigation }) => {
 
       var formdata = {
         fullName: fullName,
-        emailID: emailID,
-        contactNumber: contactNumber,
-        uniqueCode: uniqueCode,
+        email: emailID,
+        mobile: contactNumber,
+        referCode: uniqueCode,
+        notificationConsent : 1,
       };
 
       try {
         // This is the initial signup call that should trigger OTP sending
-        const ResData = await fetch('https://jobipo.com/api/v2/sign-up', {
+        const ResData = await fetch('https://jobipo.com/api/v3/sign-up-process', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(formdata),
         }).then(res => res.json());
 
+        // just add this to tesyt i will remove this later keep in mind also add ResData && ResData.status === 1 in below if condition
+        
+
         console.log('FinalSubmit (Initial Signup) response:', ResData);
-        if (ResData && ResData.status === 1) {
-         
+        details = ResData
+
+        if ( ResData && ResData.success ) {
+          // Don't navigate here - wait for OTP verification
           setIsOtpSent(true); 
           setRotp(ResData.otp || '');
           setTimer(30); 
@@ -103,7 +114,7 @@ const Register = ({ navigation }) => {
 
           // Alert.alert(String(ResData.msg)); 
         } else {
-          Alert.alert(String(ResData.msg || 'An error occurred during signup.'));
+          Alert.alert(String(ResData.message || 'An error occurred during signup.'));
         }
       } catch (err) {
         console.log('FinalSubmit (Initial Signup) error:', err);
@@ -123,25 +134,31 @@ const Register = ({ navigation }) => {
   }
 
   const formdata = {
-    contact_number: contactNumber,
+    mobile: contactNumber,
     otp: enteredOtp,
+    userData : details.userData  // i have change this 
   };
 
   console.log('FormData being sent to verify-otp API:', formdata);
 
   try {
-    const ResData = await fetch('https://jobipo.com/api/v2/verify-otp', {
+    const ResData = await fetch('https://jobipo.com/api/v3/verify-sign-up-process-otp', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(formdata),
     }).then(res => res.json());
 
     console.log('checkOtp response:', ResData);
-
-    if (ResData.type === 'success') {
+    // i am changing this for testing i will remove it later 
+    
+    
+//
+    if (ResData.success) {
       // Alert.alert('OTP Verified Successfully');
+      await AsyncStorage.setItem('UserID', String(ResData.userId));
       navigation.navigate('RegistrationP');
       return true;
     } else {
@@ -246,36 +263,63 @@ useEffect(() => {
 
   const sendOtp = async () => {
     console.log('Resend OTP called');
-    if (contactNumber !== '' && emailID !== '' && fullName !== '') { // Ensure primary fields are still valid
-      // It's good practice to send all relevant info for resend,
-      // as the backend might re-validate or tie it to the user.
-      var formdata = { contactNumber: contactNumber, emailID: emailID, fullName: fullName };
+   if (fullName !== '' && emailID !== '' && contactNumber !== '') {
+      // Before sending OTP, check if terms are accepted
+     
+
+      var formdata = {
+        fullName: fullName,
+        email: emailID,
+        mobile: contactNumber,
+        referCode: uniqueCode,
+        notificationConsent : notificationConsent + 1,
+      };
 
       try {
-        const ResData = await fetch('https://jobipo.com/api/Singup/sendOtp', { // Note: 'Singup' typo in your original URL
+        // This is the initial signup call that should trigger OTP sending
+        const ResData = await fetch('https://jobipo.com/api/v3/sign-up-process', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify(formdata),
         }).then(res => res.json());
 
-        console.log('sendOtp (resend) response:', ResData);
-        if (ResData && ResData.status === 1) {
-          setRotp(ResData.msg); // Store the OTP received from server (if your server returns it)
-          setTimer(30); // Reset timer for resend
-          setIsOtpSent(true); // Ensure OTP section is visible
-          setotp(['', '', '', '']); // Clear previous OTP digits
-          Alert.alert(ResData.msg); // Confirm OTP sent
+        // just add this to tesyt i will remove this later keep in mind also add ResData && ResData.status === 1 in below if condition
+        
+
+        console.log('FinalSubmit (Initial Signup) response:', ResData);
+        
+
+
+        if ( ResData && ResData.success ) {
+          // Don't navigate here - wait for OTP verification
+          setIsOtpSent(true); 
+          setRotp(ResData.otp || '');
+          setTimer(30); 
+
+          //await AsyncStorage.setItem('UserID', String(ResData.UserID));
+          await AsyncStorage.setItem('Token', String(ResData.token));
+          await AsyncStorage.setItem('ContactNumber', String(contactNumber));
+
+          const storedUserId = await AsyncStorage.getItem('UserID');
+          const storedToken = await AsyncStorage.getItem('Token');
+          const storedContactNumber = await AsyncStorage.getItem('ContactNumber');
+          console.log('Saved userId in AsyncStorage:', storedUserId);
+          console.log('Saved storedToken in AsyncStorage:', storedToken);
+          console.log('Saved contactNumber in AsyncStorage:', storedContactNumber);
+
+          // Alert.alert(String(ResData.msg)); 
         } else {
-          Alert.alert(String(ResData.msg || 'Failed to resend OTP.'));
+          Alert.alert(String(ResData.message || 'An error occurred during signup.'));
         }
       } catch (err) {
-        console.log('sendOtp (resend) error:', err);
-        Alert.alert('An error occurred while resending OTP.');
+        console.log('FinalSubmit (Initial Signup) error:', err);
+        Alert.alert('An error occurred during signup.');
       }
     } else {
-      Alert.alert('Please fill in your Full Name, Email, and Mobile Number before resending OTP.');
+      Alert.alert('Please Fill All Required Data (Full Name, Email, Mobile Number)');
     }
   };
 
@@ -477,7 +521,7 @@ useEffect(() => {
                   </Pressable>
                 )}
               </View>
-              <View style={styles.resendContainer}>
+              {/* <View style={styles.resendContainer}>
               
                   <Pressable
                     style={styles.resendBtn}
@@ -486,7 +530,7 @@ useEffect(() => {
                     <Text style={styles.resendText}>Resend OTP</Text>
                   </Pressable>
                
-              </View>
+              </View> */}
             </View>
           )}
         </View>
@@ -729,5 +773,7 @@ toggleTextInactive: {
     // Defined in continuesavebtn and applybtn
   }
 });
+
+// thos to test git
 
 export default Register;

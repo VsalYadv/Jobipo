@@ -77,6 +77,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   stepContainer: {
     alignItems: 'center',

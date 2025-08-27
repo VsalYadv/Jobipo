@@ -103,7 +103,8 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            // Temporarily disable signing for debug to fix installation issues
+            // signingConfig signingConfigs.debug
         }
         release {
             // Caution! In production, you need to generate your own keystore file.

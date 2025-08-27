@@ -12,12 +12,12 @@ defaultConfig.transformer = {
 
 module.exports = mergeConfig(defaultConfig, {});
 
-const exclusionList = require('metro-config/src/defaults/exclusionList');
+// const exclusionList = require('metro-config/src/defaults/exclusionList');
 
-module.exports = {
-  resolver: {
-    blacklistRE: exclusionList([/android\/.*/, /ios\/.*/]),
-  },
-  watchFolders: [],
-};
-//comment added
+// module.exports = {
+//   resolver: {
+//     blacklistRE: exclusionList([/android\/.*/, /ios\/.*/]),
+//   },
+//   watchFolders: [],
+// };
+// //comment added

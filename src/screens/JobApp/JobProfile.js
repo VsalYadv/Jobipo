@@ -1042,11 +1042,8 @@ const pickImage = async () => {
     </View>
   ))}
 </View>
-
-   
-
-            <Text style={styles.label}>Total Year of Experience</Text>
-            <View style={styles.pickerWrapper}>
+  <Text style={styles.label}>Total Year of Experience</Text>
+  <View style={styles.pickerWrapper}>
   <Picker
     selectedValue={experienceLevel}
   onValueChange={(value) => setExperienceLevel(value)}
@@ -1055,6 +1052,7 @@ const pickImage = async () => {
   }}   
    dropdownIconColor="#000"  >
     {/* <Picker.Item label="0-1 Year" value="" /> */}
+    <Picker.Item label = "Fresher" value="0"/>
     <Picker.Item label="0-1 Year" value="0-1" color="#D0D0D0"/>
     <Picker.Item label="1-2 Years" value="1-2" />
     <Picker.Item label="2-3 Years" value="2-3" />
@@ -1062,7 +1060,7 @@ const pickImage = async () => {
     <Picker.Item label="5-7 Years" value="5-7" />
     <Picker.Item label="7-10 Years" value="7-10" />
   </Picker>
-</View>
+   </View>
 
 
 
