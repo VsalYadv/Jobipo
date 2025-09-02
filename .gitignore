@@ -46,3 +46,4 @@ android/app/.cxx/
 # Misc
 .env
 *.log
+nul
