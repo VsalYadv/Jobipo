@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Image,Keyboard, ScrollView, Pressable,StyleSheet, Modal, Button, TextInput, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { View, Text, Image,Keyboard, ScrollView, Pressable,StyleSheet, Modal, Button, TextInput, TouchableOpacity, FlatList, Alert, Linking } from 'react-native';
 // import Icon from 'react-native-vector-icons/Ionicons';
 import JobHeader from '../../components/Job/JobHeader';
 import JobMenu from '../../components/Job/JobMenu';
@@ -13,7 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {PhoneIcon,EnvelopeIcon,VerticalDashedLine,UploadArrowIcon,SmallGrayCircle,SpeakerProfileIcon, LockIcon} from '../JobSvgIcons';
+import {PhoneIcon,EnvelopeIcon,VerticalDashedLine,UploadArrowIcon,SmallGrayCircle,SpeakerProfileIcon, LockIcon, PDFIconRed} from '../JobSvgIcons';
 import GooglePlacesInput from '../../components/GooglePlacesInput';
 import SimpleHeader from '../../components/SimpleHeader';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -31,6 +31,7 @@ const JobProfile = () => {
   const [noticePeriod, setNoticePeriod] = useState('Less than 15 days');
   const [certification, setCertification] = useState('');
   const [cv, setCV] = useState('');
+  const [cvUri, setCvUri] = useState('');
   const [pic, setPic] = useState('iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAgMAAACJFjxpAAAADFBMVEXFxcX////p6enW1tbAmiBwAAAFiElEQVR4AezAgQAAAACAoP2pF6kAAAAAAAAAAAAAAIDbu2MkvY0jiuMWWQoUmI50BB+BgRTpCAz4G6C8CJDrC3AEXGKPoMTlYA/gAJfwETawI8cuBs5Nk2KtvfiLW+gLfK9m+r3X82G653+JP/zjF8afP1S//y+An4/i51//AsB4aH+/QPD6EQAY/zwZwN8BAP50bh786KP4+VT+3fs4/noigEc+jnHeJrzxX+NWMDDh4g8+EXcnLcC9T8U5S/CdT8bcUeBEIrwBOiI8ki7Ba5+NrePgWUy89/nYyxQ8Iw3f+pWY4h1gb3eAW7sDTPEOsLc7wK1TIeDuDB+I/OA1QOUHv/dFsZQkhKkh4QlEfOULYz2nGj2/Nn1LmwR/86VxlCoAW6kCsHRGANx1RgCMo5Qh2EsZgrXNQZZShp5Liv7Il8eIc5C91EHY2hxk6bwYmNscZIReDBwtCdhbErC1JGBpScBcOgFMLQsZMQs5Whayd+UQsLYsZGlZyNyykKllISNmIUfAwifw8NXvTojAjGFrdYi11SGWVoeYWx1i6lmQCiEjFkKOVgjZ+xxIhZCtFULWHkCqxCw9gNQKmP9vNHzipdEPrRcxtVbAeDkAvve0iM2QozVD9hfjhp4YP/UrkJYDbD2AtBxgfSkAvvHEeNcDSAsilgtAWxIy91J8AXgZAJ5e33+4tuACcAG4AFwALgBXRXQB6AFcB5MXAuA6nl9/0Vx/011/1V5/1/dfTPJvRtdnu/zL6beeFO/7r+fXBYbrEkt/j+i6ytXfpuvvE/ZXOnsA/a3a/l5xf7O6v1t+Xe/vOyz6HpO8yyboM8o7rfJes77bru83THk48p7TvOs27zvOO6/73vO++z7l4cgnMPQzKPopHC0N9noSSz6LJp/Gk88jyicy5TOp6qlc+VyyfDJbPpuuns6XzyfMJzTmMyrrKZ35nNJ8Ums+q7af1tvPK+4nNodEnPKp3fnc8npyez67/qVP7+/fL8hfcMjfsOhf8cjfMclfcnn9+BkOnLECP8Q58OYeyJ40eoyF6Ee/En/JHlP6mIlRVXprF4BxtAvArV0AxtEuALd2ARhHuwDc2gVgHPX/hFv9fMBddjIGeKg/WCxlCsI46u+Ga5mCcJd+sIG9UkGAW32ZbApFAHhod4Bb3eo04h3god0BbiUHYApVCNjbHeBW+QDAXT4a7qg7r7e214057vg0QhkEHkoSwq0kIdydXw4/Q3H8hjYJ3vL0WConBJhCHQaOToeBrU0BljYFmEoVgHGUKgAPnREAt84IgLuqFgAYSUEOAHszDwuAtSkHAZhLGYIpdCLgKGUIHtocZG1zkLmUIRhxDnJU1RDA1uYga5uDzKUOwhTnIEfnxcDe5iBrcyQAYGlzkKkUYhhxDrKXQgxbSwLWUohhbknA1JKAEZOAvSUBW0sC1pYEzC0JmFoSMMJyCDhaFrK3JGDtyiFgaVnI3LKQqWUhI2YhR8tC9paFrC0LWVoWMrcsZGpZyIhZyNGykL2rSIGtlQHWVgZYWhlgbmWAqZUBRiwDHK0MsLcywNbKAGsOoNUhllaHmFsdYmp1iBHrEEerQ+w5gFYI2VodYm11iKXVIeYcQCuETK0QMmIh5MgBtELI3gohWyuErDmAVolZWiFkzgG0SszUKjGjfj6gVmKOVonZcwCtFbB9HQC+ozWDbz1bvGu9iKW1AuYcQOtFTLEX1GbIaFegN0OOHEBrhuw5gNYM2XIArRuz5gDacoB3bTnAEktxXQ4wfw0AvveM8b4tiJjSJOwLIsbXsAKeNeKCiOO3D+AVbUl0AfjGs8ZPbUnIdgFoa1LWC0BblfMuB9AeC1j6gqQE0J9LmC8AOYD2ZMb7i4bt2ZTpWoHfPoB7Tj2fXzT8N1X41vkq/QHOAAAAAElFTkSuQmCC')
   const colorScheme = useColorScheme();
   const textColor = colorScheme === 'dark' ? '#000' : '#000';
@@ -239,6 +240,7 @@ useFocusEffect(
   // };
   
   const [searchText, setSearchText] = useState('');
+  const [languageSearchText, setLanguageSearchText] = useState('');
   const [filteredSkills, setFilteredSkills] = useState([]);
   const [skillOptions, setSkillOptions] = useState([]);
   const [open, setOpen] = useState(false);
@@ -279,6 +281,26 @@ useFocusEffect(
       setFilteredSkills([]);
     }
   }, [searchText, skillOptions]);
+
+  // Load saved profile image from AsyncStorage
+  useFocusEffect(
+    useCallback(() => {
+      const loadSavedImage = async () => {
+        try {
+          const savedImage = await AsyncStorage.getItem('userProfileImage');
+          if (savedImage) {
+            const imageData = JSON.parse(savedImage);
+            setPhoto(imageData);
+            console.log('Profile image loaded from AsyncStorage in JobProfile');
+          }
+        } catch (error) {
+          console.log('Error loading image from AsyncStorage:', error);
+        }
+      };
+
+      loadSavedImage();
+    }, [])
+  );
 
 const handleSelectSkill = (skill) => {
   console.log('Selected:', skill);
@@ -340,8 +362,10 @@ const handleRemoveSkill = (skillToRemove) => {
 
           const certificationName = await AsyncStorage.getItem('certification');
           const cv = await AsyncStorage.getItem('cv');
+          const cvUri = await AsyncStorage.getItem('cvUri');
           setCertification(certificationName);
           setCV(cv);
+          setCvUri(cvUri);
 
           if (jobSeekerData) {
             setJobSeekerData({
@@ -430,13 +454,13 @@ const handleRemoveSkill = (skillToRemove) => {
 
   const filteredLanguages = languages.filter(
     (lang) =>
-      lang.toLowerCase().includes(searchText.toLowerCase()) &&
+      lang.toLowerCase().includes(languageSearchText.toLowerCase()) &&
       !languageKnown.includes(lang)
   );
 
   const handleSelect = (lang) => {
     setLanguageKnown(prev => [...prev, lang]);
-    setSearchText('');
+    setLanguageSearchText('');
     Keyboard.dismiss();
   };
 
@@ -611,11 +635,16 @@ submissionData.append('gender', formData.gender);
     console.log('Response new update profile:', data);
 
     if (data.status === 1) {
-      Toast.show({
-     type: 'success',
-      text1: 'Profile Updated Successfully',});
-      
-      navigation.navigate('JobHome');
+      Alert.alert(
+        'Success', 
+        'Profile Updated Successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('JobHome')
+          }
+        ]
+      );
     } else {
       Alert.alert('Update Failed', data.message || 'Something went wrong.');
     }
@@ -657,7 +686,12 @@ useFocusEffect(
         setCurrentSalary(data.data.current_salary || '');
         setPreferredLocations(data.data.preferredLocation || '');
         setEnglishSpeaking(data.data.englishSpeaking || '');
-        setPhoto(data.data.photo || null);
+        
+        // Only set photo from server if no saved image exists in AsyncStorage
+        const savedImage = await AsyncStorage.getItem('userProfileImage');
+        if (!savedImage) {
+          setPhoto(data.data.photo || null);
+        }
 
 
 try {
@@ -779,11 +813,21 @@ const pickImage = async () => {
       mediaType: 'photo',
     });
 
-    setPhoto({
+    const photoData = {
       uri: image.path,
       type: image.mime,
       fileName: image.filename,
-    });
+    };
+
+    setPhoto(photoData);
+    
+    // Save image to AsyncStorage
+    try {
+      await AsyncStorage.setItem('userProfileImage', JSON.stringify(photoData));
+      console.log('Profile image saved to AsyncStorage');
+    } catch (storageError) {
+      console.log('Error saving image to AsyncStorage:', storageError);
+    }
   } catch (error) {
     console.log('Image pick cancelled or failed:', error);
   }
@@ -1019,6 +1063,7 @@ const pickImage = async () => {
   <FlatList
     data={filteredSkills}
     keyExtractor={(item, index) => index.toString()}
+    keyboardShouldPersistTaps="handled"
     renderItem={({ item }) => (
       <TouchableOpacity
         onPress={() => handleSelectSkill(item)}
@@ -1206,11 +1251,11 @@ const pickImage = async () => {
           <TextInput
             style={styles.input}
             placeholder="Type to search and add..."
-            value={searchText}
-            onChangeText={setSearchText}
+            value={languageSearchText}
+            onChangeText={setLanguageSearchText}
           />
 
-          {searchText.length > 0 && filteredLanguages.length > 0 && (
+          {languageSearchText.length > 0 && filteredLanguages.length > 0 && (
             <FlatList
               data={filteredLanguages}
               keyExtractor={(item, index) => index.toString()}
@@ -1400,7 +1445,11 @@ const pickImage = async () => {
       {/* Icon + Dashed Line */}
       <View style={styles.iconWrapper}>
         <View style={styles.circle}>
-          <UploadArrowIcon size={24} />
+          {cv ? (
+            <PDFIconRed size={24} />
+          ) : (
+            <UploadArrowIcon size={24} />
+          )}
         </View>
         {/* <Svg height="30" width="2">
           <Path
@@ -1412,12 +1461,18 @@ const pickImage = async () => {
         </Svg> */}
       </View>
       {/* Info Text */}
-      <Text style={styles.infoText}>Upload PDF, Doc or Docx files only</Text>
-      <Text style={styles.infoText}>Maximum file size 5MB</Text>
+      {cv ? (
+        <Text style={[styles.infoText, { fontWeight: 'bold', color: '#FF8D53' }]}>{cv}</Text>
+      ) : (
+        <>
+          <Text style={styles.infoText}>Upload PDF, Doc or Docx files only</Text>
+          <Text style={styles.infoText}>Maximum file size 5MB</Text>
+        </>
+      )}
 
       {/* Upload Button */}
           <TouchableOpacity style={styles.uploadBox} onPress={() => navigation.navigate('ResumeUpload', jobSeekerData)}>
-          <Text style={styles.uploadText}>+ Add your resume</Text>
+          <Text style={styles.uploadText}>{cv ? 'Change resume' : '+ Add your resume'}</Text>
           </TouchableOpacity>
     </View>
 
@@ -1578,6 +1633,7 @@ svgBadge: {
   },
   profileValue: {
     color: '#000',
+    fontWeight: 'bold',
   },
   profileshare: {
     marginTop: 7,

@@ -255,6 +255,8 @@ const AppliedJob = ({ navigation }) => {
             data={appliedJobs}
             keyExtractor={(item, index) => index.toString()}
             renderItem={renderJobItem}
+            contentContainerStyle={styles.flatListContent}
+            showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={{ alignItems: 'center', marginTop: 40 }}>
                 <Icon name="work-off" size={50} color="#ccc" />
@@ -274,7 +276,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 16,
-    marginBottom:30,
+  },
+  flatListContent: {
+    paddingBottom: 100, // Add space for JobMenu
   },
   heading: {
     fontSize: 20,

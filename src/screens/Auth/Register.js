@@ -8,7 +8,9 @@ import {
   Alert,
   Linking,
   StyleSheet,
-  TouchableOpacity // For the custom Button component
+  TouchableOpacity, // For the custom Button component
+  Platform,
+  StatusBar
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -67,6 +69,8 @@ const Register = ({ navigation }) => {
 
   const FinalSubmit = async () => {
     if (fullName !== '' && emailID !== '' && contactNumber !== '') {
+
+      
       // Before sending OTP, check if terms are accepted
      
 
@@ -159,7 +163,8 @@ const Register = ({ navigation }) => {
     if (ResData.success) {
       // Alert.alert('OTP Verified Successfully');
       await AsyncStorage.setItem('UserID', String(ResData.userId));
-      navigation.navigate('RegistrationP');
+       navigation.navigate('RegistrationP');
+     // add line here i just remove to test plz add navigate line here back       kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
       return true;
     } else {
       Alert.alert(String(ResData.msg || 'Invalid OTP.'));
@@ -340,7 +345,20 @@ useEffect(() => {
 
   return (
     <View style={styles.Viewcontainer}>
-      <ScrollView  contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor="#F5F4FD" 
+        translucent={false}
+      />
+      <ScrollView  
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          paddingBottom: Platform.OS === 'android' ? 20 : 0
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.container}>
 
           {!isOtpSent && ( // Show the registration form if OTP is not yet sent
@@ -543,8 +561,9 @@ const styles = StyleSheet.create({
   Viewcontainer: {
     flex: 1,
     backgroundColor: '#F5F4FD',
-     alignItems: 'center',       
+    alignItems: 'center',       
     justifyContent: 'center',
+    paddingBottom: Platform.OS === 'android' ? 10 : 0,
   },
 
   container: {
@@ -696,6 +715,7 @@ toggleTextInactive: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
+    marginBottom: Platform.OS === 'android' ? 25 : 0,
   },
   lastInfoText: {
     fontSize: 14,

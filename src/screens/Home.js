@@ -59,6 +59,7 @@ const Home = ({ navigation }) => {
   const [paidEarning, setpaidEarning] = useState([]);
   const [LeadStatus, setLeadStatus] = useState('');
   const [ProductName, setProductName] = useState('');
+  const [savedProfileImage, setSavedProfileImage] = useState(null);
 
     const colorScheme = useColorScheme();
     const statusBarColor = colorScheme === 'dark' ? '#FF8D53' : '#FF8D53';
@@ -78,6 +79,26 @@ const Home = ({ navigation }) => {
   //     //dispatch({ type: 'RETRIEVE_TOKEN', token: userToken });
   //   }, 1);
   // }, []);
+
+  // Load saved profile image from AsyncStorage
+  useFocusEffect(
+    useCallback(() => {
+      const loadSavedProfileImage = async () => {
+        try {
+          const savedImage = await AsyncStorage.getItem('userProfileImage');
+          if (savedImage) {
+            const imageData = JSON.parse(savedImage);
+            setSavedProfileImage(imageData);
+            console.log('Profile image loaded in Home from AsyncStorage');
+          }
+        } catch (error) {
+          console.log('Error loading profile image in Home:', error);
+        }
+      };
+
+      loadSavedProfileImage();
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -236,7 +257,7 @@ const Home = ({ navigation }) => {
         <View style={styles.profile}>
           <View style={styles.profContainer}>
             <Image
-              source={{ uri: 'data:image/png;base64,' + users['Pic'] }}
+              source={savedProfileImage ? { uri: savedProfileImage.uri } : { uri: 'data:image/png;base64,' + users['Pic'] }}
               style={styles.profimage}
               resizeMode="contain" />
           </View>

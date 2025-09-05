@@ -998,7 +998,25 @@ values={[formData.age[0], formData.age[1]]}
     />
   )}
   ListEmptyComponent={
-    <Text style={styles.noResults}>No jobs found.</Text>
+    <View style={styles.emptyContainer}>
+      <Text style={styles.noResults}>
+        {route.params?.filteredJobs !== undefined 
+          ? 'No jobs found with applied filters.' 
+          : 'No jobs found.'}
+      </Text>
+      {route.params?.filteredJobs !== undefined && (
+        <TouchableOpacity
+          style={styles.clearFilterBtn}
+          onPress={() => {
+            // Navigate back to JobHome and clear all filters
+            navigation.navigate('JobHome', { clearFilters: true });
+          }}>
+          <Text style={styles.clearFilterBtnText}>
+            Clear Filter & Show All Jobs
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
   }
   onEndReachedThreshold={0.5}
   onEndReached={() => {
@@ -1338,6 +1356,27 @@ salary: {
   paddingHorizontal: 12,
   borderRadius: 20,
   marginRight: 4,
+},
+
+emptyContainer: {
+  alignItems: 'center',
+  paddingVertical: 40,
+  paddingHorizontal: 20,
+},
+
+clearFilterBtn: {
+  backgroundColor: '#FF8D53',
+  paddingHorizontal: 20,
+  paddingVertical: 12,
+  borderRadius: 8,
+  marginTop: 16,
+},
+
+clearFilterBtnText: {
+  color: '#fff',
+  fontSize: 14,
+  fontWeight: '600',
+  textAlign: 'center',
 },
 
 });

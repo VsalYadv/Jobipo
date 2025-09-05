@@ -357,7 +357,7 @@ try {
                   return (
                     <TouchableOpacity
                       onPress={() => {
-                        setSkill(item);
+                        setSkill('');
                         setSelectedSkills([...selectedSkills, item]);
                         setOpen(false);
                       }}

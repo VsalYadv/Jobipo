@@ -805,7 +805,7 @@ jobTitle: {
   },
   applyButton: {
     flex: 1,
-    backgroundColor: '#0d4574',
+    backgroundColor: '#FF8D53',
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,

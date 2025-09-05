@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StatusBar } from 'react-native';
 import { pick, types } from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/Octicons';
 import UploadIcon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -163,7 +163,19 @@ const ResumeUpload = ({ navigation, route }) => {
 
       if (responseData && responseData.status === 1) {
         console.log('20. SUCCESS: Resume uploaded successfully');
+        console.log('21. Full response data:', responseData);
         await AsyncStorage.setItem('cv', fileName);
+        
+        // Check if server returns a URL to the uploaded file
+        const serverFileUrl = responseData.fileUrl || responseData.url || responseData.data?.url;
+        if (serverFileUrl) {
+          console.log('22. Server file URL found:', serverFileUrl);
+          await AsyncStorage.setItem('cvUri', serverFileUrl);
+        } else {
+          console.log('22. No server URL found, storing local URI');
+          await AsyncStorage.setItem('cvUri', fileUri);
+        }
+        
         Alert.alert('Success', 'Resume uploaded successfully!');
         setFileUri(null);
         setFileName('');
@@ -205,7 +217,7 @@ const ResumeUpload = ({ navigation, route }) => {
 
   return (
     <>
-
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
     <SafeAreaView style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}>
       <JobHeader />

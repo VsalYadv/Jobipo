@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BackHandler, KeyboardAvoidingView, Platform } from 'react-native';
+import { BackHandler, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, FlatList, Pressable, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -14,6 +14,8 @@ const RegistrationP = ({ navigation, route }) => {
   // const jobSeekerData = route.params || {};
   const scrollViewRef = React.useRef(null);
   const jobTitleInputRef = React.useRef(null);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [isJobTitleFocused, setIsJobTitleFocused] = useState(false);
   const [formData, setFormData] = useState({
     userId: '',
     current_location:  '',
@@ -86,6 +88,21 @@ const RegistrationP = ({ navigation, route }) => {
     fetchUserId();
   }, [])
 );
+
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidHideListener?.remove();
+      keyboardDidShowListener?.remove();
+    };
+  }, []);
 
 
 const [jobSuggestions, setJobSuggestions] = useState([]);
@@ -237,20 +254,23 @@ useFocusEffect(
 
   return (
     <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: '#F5F4FD' }}
+      style={styles.container} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <View style={styles.container}>
-        <StepIndicator2/>
-        
-        {/* Scrollable Form Content */}
-        <ScrollView 
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          ref={scrollViewRef}
-        >
+      <StepIndicator2/>
+      
+      {/* Single ScrollView with all content */}
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isKeyboardVisible && { paddingBottom: 100 }
+        ]}
+        showsVerticalScrollIndicator={false}
+        ref={scrollViewRef}
+        keyboardShouldPersistTaps="handled"
+      >
           <View style={[styles.card, { zIndex: 1000 }]}>
             <View style={[styles.ContainerDetails, { zIndex: 1000 }]} >
               <Text style={styles.label}>Current Location</Text>
@@ -299,7 +319,8 @@ useFocusEffect(
               <View>
                 <Text style={styles.label}>Date Of Birth</Text>
                 <TextInput
-                  placeholder="dd/mm/yyyy"
+                  placeholder="DD/MM/YYYY"
+                  placeholderTextColor='#000000'
                   value={formData.dob}
                   onChangeText={(text) => {
                     const cleaned = text.replace(/[^\d]/g, '');
@@ -366,20 +387,31 @@ useFocusEffect(
                   onChangeText={handleJobTitleChange}
                   placeholderTextColor="#555"
                   onFocus={() => {
+                    setIsJobTitleFocused(true);
                     setTimeout(() => {
                       if (scrollViewRef.current && jobTitleInputRef.current) {
                         jobTitleInputRef.current.measureLayout(
                           scrollViewRef.current,
                           (x, y) => {
+                            // Scroll to show the input with some space above, but not too much
                             scrollViewRef.current.scrollTo({
-                              y: y - 100,
+                              y: Math.max(0, y - 80), // Ensure we don't scroll past the top
                               animated: true,
                             });
                           },
-                          () => {}
+                          () => {
+                            // Fallback if measureLayout fails
+                            scrollViewRef.current.scrollTo({
+                              y: 150,
+                              animated: true,
+                            });
+                          }
                         );
                       }
                     }, 100);
+                  }}
+                  onBlur={() => {
+                    setIsJobTitleFocused(false);
                   }}
                 />
 
@@ -403,11 +435,13 @@ useFocusEffect(
                 )}
               </View>
 
-              <View>
+              <View style={{ marginTop: 5 }}>
                 <Text style={styles.label}>Preferred Job Industry</Text>
                 <View style={styles.dropdownBox}>
                   <Picker
                     selectedValue={formData.preferred_job_industry}
+                     style={{ color: 'black' }}
+                    
                     onValueChange={(itemValue) =>
                       setFormData({ ...formData, preferred_job_industry: itemValue })
                     }
@@ -444,24 +478,23 @@ useFocusEffect(
               </View>
             </View>
           </View>
-        </ScrollView>
 
-        {/* Fixed Bottom Section */}
-        <View style={styles.bottomSection}>
-          <TouchableOpacity style={styles.continueBtn} onPress={handleSubmit}>
-            <View style={styles.continueContent}>
-              <Text style={styles.continueText}>Next</Text>
+          {/* Bottom Section moved inside ScrollView */}
+          <View style={styles.bottomSection}>
+            <TouchableOpacity style={styles.continueBtn} onPress={handleSubmit}>
+              <View style={styles.continueContent}>
+                <Text style={styles.continueText}>Next</Text>
+              </View>
+            </TouchableOpacity>
+            
+            <View style={styles.lastInfo}>
+              <Text style={styles.lastInfoText}>You have an account?</Text>
+              <Pressable onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.lastInfoText, { marginLeft: 10, fontWeight: 'bold' ,backgroundColor:'#ffffff',paddingHorizontal:8,borderRadius:10,}]}>Log In</Text>
+              </Pressable>
             </View>
-          </TouchableOpacity>
-          
-          <View style={styles.lastInfo}>
-            <Text style={styles.lastInfoText}>You have an account?</Text>
-            <Pressable onPress={() => navigation.navigate('Login')}>
-              <Text style={[styles.lastInfoText, { marginLeft: 10, fontWeight: 'bold' ,backgroundColor:'#ffffff',paddingHorizontal:8,borderRadius:10,}]}>Log In</Text>
-            </Pressable>
           </View>
-        </View>
-      </View>
+        </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -478,7 +511,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 50,
   },
   card: {
     backgroundColor: '#ffffff',
@@ -493,8 +526,9 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     backgroundColor: '#F5F4FD',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingHorizontal: 0,
+    paddingVertical: 20,
+    marginTop: 20,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
@@ -798,12 +832,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     maxHeight: 150,
-    elevation: 8,
+    elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    zIndex: 1000,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    zIndex: 1001,
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
   },
   suggestionItem: {
     paddingVertical: 12,
@@ -820,6 +858,7 @@ const styles = StyleSheet.create({
   jobTitleContainer: {
     position: 'relative',
     zIndex: 1000,
+    marginBottom: 20,
   },
   locationContainer: {
     zIndex: 1000,

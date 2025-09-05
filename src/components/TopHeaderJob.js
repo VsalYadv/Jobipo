@@ -12,6 +12,7 @@ import {
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SettingsIcon, CircleBorderIcon, FavIcon } from './SVGIcon';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +23,27 @@ const TopHeaderJob = () => {
 
   const [users, setUsers] = useState([]);
   const [jobseekers, setJobseekers] = useState([]);
+  const [savedProfileImage, setSavedProfileImage] = useState(null);
+
+  // Load saved profile image from AsyncStorage
+  useFocusEffect(
+    useCallback(() => {
+      const loadSavedProfileImage = async () => {
+        try {
+          const savedImage = await AsyncStorage.getItem('userProfileImage');
+          if (savedImage) {
+            const imageData = JSON.parse(savedImage);
+            setSavedProfileImage(imageData);
+            console.log('Profile image loaded in TopHeaderJob from AsyncStorage');
+          }
+        } catch (error) {
+          console.log('Error loading profile image in TopHeaderJob:', error);
+        }
+      };
+
+      loadSavedProfileImage();
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -29,6 +51,7 @@ const TopHeaderJob = () => {
         try {
           const res = await fetch('https://jobipo.com/api/Agent/index');
           const sliderDataApi = await res.json();
+          console.log("sliderDataApi",sliderDataApi)
           if (sliderDataApi?.logout !== 1) {
             const parsedMsg = JSON.parse(sliderDataApi?.msg);
             setUsers(parsedMsg?.users);
@@ -85,7 +108,9 @@ const TopHeaderJob = () => {
       <View style={styles.profileContainer}>
         <View style={{ marginVertical: 6,
 }}>
-          {users?.photo ? (
+          {savedProfileImage ? (
+            <Image source={{ uri: savedProfileImage.uri }} style={styles.profileImage} />
+          ) : users?.photo ? (
             <Image source={{ uri: users.photo }} style={styles.profileImage} />
           ) : (
             <CircleBorderIcon />
@@ -165,7 +190,7 @@ const styles = StyleSheet.create({
   },
   profilePosition: {
     fontSize: 10,
-    color: '#777',
+    color: '#000000',
   },
   iconGroup: {
     flexDirection: 'row',

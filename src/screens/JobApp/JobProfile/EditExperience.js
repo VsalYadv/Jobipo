@@ -310,6 +310,7 @@ useFocusEffect(
             <Text style={styles.label}>Company Name</Text>
             <TextInput
               style={styles.input}
+              
               placeholder="Enter Company Name"
               placeholderTextColor={isDarkMode ? '#555' : '#555'}
               value={formData?.companyName}
@@ -319,6 +320,7 @@ useFocusEffect(
             <Text style={styles.label}> Job Title</Text>
               <TextInput
                 style={styles.input}
+                maxLength={28}
                 placeholder="Enter Job Title"
                 placeholderTextColor={isDarkMode ? '#555' : '#555'}
                 value={formData.jobTitle}

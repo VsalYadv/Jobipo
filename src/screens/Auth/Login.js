@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Pressable,
-  ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback,ActivityIndicator
+  ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback,ActivityIndicator, StatusBar
 } from 'react-native';
 import Logo from '../../components/Auth/Logo'; 
 
@@ -51,6 +51,11 @@ const Login = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor="#F5F4FD" 
+        translucent={false}
+      />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           style={{ backgroundColor: '#F5F4FD' }}

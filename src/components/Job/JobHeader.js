@@ -50,9 +50,9 @@ const JobHeader = ({ title }) => {
          <Pressable  onPress={() => navigation.navigate('Notifications') } >
                   <Ionicons
                     name="notifications"
-                    style={{ marginLeft: 10 }}
+                    style={{ marginLeft: 10, marginRight: 15 }}
                     size={28}
-                    color="#212529"
+                    color="#FF8D53"
                   />
           </Pressable>
       </View>
