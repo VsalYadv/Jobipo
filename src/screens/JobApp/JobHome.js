@@ -292,6 +292,7 @@ const JobHome = ({navigation, route}) => {
       return; // prevent loading page=1 again if already loaded
     }
     setIsFetchingMore(true);
+    const UserID = await AsyncStorage.getItem('UserID')
 
     try {
       console.log('pageToFetch', pageToFetch);
@@ -302,6 +303,7 @@ const JobHome = ({navigation, route}) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          user_id : UserID,
           page: pageToFetch,
           limit: 15, // must be JSON string
         }),
@@ -529,8 +531,10 @@ const JobHome = ({navigation, route}) => {
   );
 
   const handleFilter = async () => {
+    const UserID = await AsyncStorage.getItem('UserID')
     // setIsLoading(true);
     const payload = {
+      user_id : UserID,
       location: formData.location,
       jobPosted: formData.jobPosted,
       title: formData.title,
@@ -546,59 +550,40 @@ const JobHome = ({navigation, route}) => {
     console.log('payload Jobs:', payload);
 
     try {
-      const tokenn = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6";
-      console.log('token :', tokenn);
-      //const token = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+      //const tokenn = await AsyncStorage.getItem('Token');
+      //console.log('token :', tokenn);
+      const tokens = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+      
 
       const res = await fetch('https://jobipo.com/api/v3/view-job-list', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${tokenn}`,
+          Authorization: `Bearer ${tokens}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(
+          
+          payload),
       });
 
       const result = await res.json();
-      console.log('Filtered Jobs:', result.jobs);
-      console.log('Result status:', result.status);
+      console.log('Filtered Jobs:', result);
 
       if (result.status == 1) {
-        // Check if result.jobs is already an array or needs parsing
-        let jobs;
-        if (typeof result.jobs === 'string') {
-          jobs = JSON.parse(result.jobs);
-        } else {
-          jobs = result.jobs;
-        }
-        
-        console.log('Processed jobs:', jobs);
+        const jobs = JSON.parse(result.msg);
         setFilteredJobs(jobs);
         setIsFiltered(true);
         
-        // Scroll to top to show filtered results
-        if (flatListRef.current) {
-          flatListRef.current.scrollToOffset({offset: 0, animated: true});
-        }
-        
-        // Stay on the same screen and show filtered results
-        // navigation.navigate('JobPage', {
-        //   filteredJobs: jobs,
-        // });
+        navigation.navigate('JobPage', {
+          filteredJobs: jobs,
+        });
       } else {
-        console.log('No jobs found or API error');
         setFilteredJobs([]);
         setIsFiltered(true);
         
-        // Scroll to top to show empty results
-        if (flatListRef.current) {
-          flatListRef.current.scrollToOffset({offset: 0, animated: true});
-        }
-        
-        // Stay on the same screen and show empty results
-        // navigation.navigate('JobPage', {
-        //   filteredJobs: [],
-        // });
+        navigation.navigate('JobPage', {
+          filteredJobs: [],
+        });
       }
     } catch (error) {
       console.error('Filter API error:', error);
@@ -692,11 +677,14 @@ const JobHome = ({navigation, route}) => {
       // Fallback to hardcoded token if AsyncStorage token is not available
       
        let  tokenn = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+       const UserID = await AsyncStorage.getItem('UserID')
       
       console.log('Fetching jobs for title:', title);
       console.log('Using token:', tokenn);
+      
 
       const payload = {
+        user_id : UserID,
         title: title,
         page: 1,
         limit: 50,
@@ -709,7 +697,8 @@ const JobHome = ({navigation, route}) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${tokenn}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(
+          payload ),
       });
 
       const result = await res.json();
@@ -773,95 +762,54 @@ const JobHome = ({navigation, route}) => {
           </View>
           <TopHeaderJob />
 
-          <View style={styles.container}>
-            <View style={[styles.searchrow, {marginTop: 8}]}>
-              <View style={styles.inputWithIcon}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Job Title, City Name "
-                  placeholderTextColor="#D0D0D0"
-                  value={searchQuery}
-                  onChangeText={async text => {
-                    setSearchQuery(text);
+          <View style={[styles.container, {position: 'relative'}]}>
+            <TouchableWithoutFeedback
+              onPress={() => {
+                Keyboard.dismiss();
+                setShowSuggestion(false);
+              }}>
+              <View style={[styles.searchrow, {marginTop: 8}]}>
+                <View style={styles.inputWithIcon}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Job Title, Keywords"
+                    placeholderTextColor="#D0D0D0"
+                    value={searchQuery}
+                    onChangeText={async text => {
+                      setSearchQuery(text);
 
-                    if (text.trim() === '') {
-                      setShowSuggestion(false);
-                      setSuggestion([]);
-                      return;
-                    }
+                      if (text.trim() === '') {
+                        setShowSuggestion(false);
+                        setSuggestion([]);
+                        return;
+                      }
 
-                    const filteredSuggestions =
-                      await fetchJobTitleSuggestions(text);
-                    console.log('filteredSuggestions', filteredSuggestions);
+                      const filteredSuggestions =
+                        await fetchJobTitleSuggestions(text);
+                      console.log('filteredSuggestions', filteredSuggestions);
 
-                    if (text.trim() === '') return;
+                      if (text.trim() === '') return;
 
-                    setSuggestion(filteredSuggestions);
-                    setShowSuggestion(filteredSuggestions.length > 0);
-                  }}
-                  onBlur={() => {
-                    // Hide suggestions when input loses focus
-                    setTimeout(() => setShowSuggestion(false), 150);
-                  }}
-                />
-
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={clearSearchAndShowAllJobs}
-                    style={styles.crossBtn}>
-                    <Text style={styles.crossBtnText}>✕</Text>
-                  </TouchableOpacity>
-                )}
-
-                <Image
-                  source={require('../../../assets/Image/icons/search.png')}
-                  style={styles.jobImg}
-                />
-                {/* <Icon name="search-outline" size={20} color="#888" style={styles.inputIcon} /> */}
-
-                {showSuggestion && (
-                  <FlatList
-                    style={{
-                      position: 'absolute',
-                      top: 50,
-                      left: 0,
-                      right: 0,
-                      backgroundColor: '#fff',
-                      maxHeight: 300,
-                      zIndex: 1,
-                    }}
-                    ItemSeparatorComponent={() => (
-                      <View
-                        style={{
-                          borderBottomWidth: 1,
-                          borderBottomColor: '#ccc',
-                        }}
-                      />
-                    )}
-                    data={suggestion}
-                    renderItem={({item}) => {
-                      return (
-                        <Pressable
-                          style={{
-                            padding: 10,
-                            zIndex: 10,
-                            //   backgroundColor: '#000'
-                          }}
-                          onPress={async () => {
-                            console.log('Selected item:', item?.jobTitle);
-                            setSearchQuery(item?.jobTitle);
-                            setShowSuggestion(false);
-                            setSuggestion([]);
-                            // Fetch jobs for the selected title
-                            await fetchJobsByTitle(item?.jobTitle);
-                          }}>
-                          <Text>{item?.jobTitle}</Text>
-                        </Pressable>
-                      );
+                      setSuggestion(filteredSuggestions);
+                      setShowSuggestion(filteredSuggestions.length > 0);
                     }}
                   />
-                )}
-              </View>
+
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity
+                      onPress={clearSearchAndShowAllJobs}
+                      style={styles.crossBtn}>
+                      <Text style={styles.crossBtnText}>✕</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <Image
+                    source={require('../../../assets/Image/icons/search.png')}
+                    style={styles.jobImg}
+                  />
+                  {/* <Icon name="search-outline" size={20} color="#888" style={styles.inputIcon} /> */}
+
+                </View>
               <TouchableOpacity
                 style={[
                   styles.searchButton,
@@ -888,7 +836,62 @@ const JobHome = ({navigation, route}) => {
                   ]}
                 />
               </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableWithoutFeedback>
+            
+            {/* Suggestion Dropdown - positioned outside input container */}
+            {showSuggestion && (
+              <View style={{
+                position: 'absolute',
+                top: 80, // Adjust based on search row height
+                left: 16,
+                right: 16,
+                zIndex: 9999,
+                elevation: 10,
+              }}>
+                <FlatList
+                  style={{
+                    backgroundColor: '#fff',
+                    maxHeight: 300,
+                    shadowColor: '#000',
+                    shadowOffset: {width: 0, height: 2},
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3.84,
+                    borderWidth: 1,
+                    borderColor: '#e0e0e0',
+                    borderRadius: 8,
+                  }}
+                  ItemSeparatorComponent={() => (
+                    <View
+                      style={{
+                        borderBottomWidth: 1,
+                        borderBottomColor: '#ccc',
+                      }}
+                    />
+                  )}
+                  data={suggestion}
+                  renderItem={({item}) => {
+                    return (
+                      <Pressable
+                        style={{
+                          padding: 10,
+                          backgroundColor: '#fff',
+                        }}
+                        onPress={async () => {
+                          console.log('Selected item:', item?.jobTitle);
+                          setSearchQuery(item?.jobTitle);
+                          setShowSuggestion(false);
+                          setSuggestion([]);
+                          // Fetch jobs for the selected title
+                          await fetchJobsByTitle(item?.jobTitle);
+                        }}>
+                        <Text>{item?.jobTitle}</Text>
+                      </Pressable>
+                    );
+                  }}
+                />
+              </View>
+            )}
             
             <View style={{flex: 1}}>
               {showFilter ? (
@@ -897,8 +900,9 @@ const JobHome = ({navigation, route}) => {
                   <ScrollView
                     style={{flex: 1}}
                     contentContainerStyle={{paddingBottom: 120, minHeight: '100%'}}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator={true}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
                     scrollEventThrottle={16}
                     bounces={true}
                     nestedScrollEnabled={true}
@@ -947,7 +951,68 @@ const JobHome = ({navigation, route}) => {
                     {/* Spacer for better scrolling */}
                     <View style={{height: 20, width: '100%'}} />
                     
-                  
+                    <View style={{paddingVertical: 10}}>
+                      <Text style={styles.sectionTitle}>Select State</Text>
+                      {loadingStates ? (
+                        <ActivityIndicator />
+                      ) : (
+                        <View style={styles.pickerWrapper}>
+                          {' '}
+                          <Picker
+                            selectedValue={selectedState}
+                            onValueChange={value => {
+                              setSelectedState(value);
+                              setFormData(prev => ({...prev, state: value}));
+                            }}
+                            style={styles.picker}>
+                            
+                            <Picker.Item label="Choose a State" value="" />
+                            {states.map(state => (
+                              <Picker.Item
+                                key={state.stateId}
+                                label={state.state}
+                                value={state.state}
+                              />
+                            ))}
+                          </Picker>
+                        </View>
+                      )}{' '}
+                      {selectedState !== '' && (
+                        <>
+                          {' '}
+                          <Text style={styles.sectionTitle}>
+                            Select City
+                          </Text>{' '}
+                          {loadingCities ? (
+                            <ActivityIndicator />
+                          ) : (
+                            <View style={styles.pickerWrapper}>
+                              {' '}
+                              <Picker
+                                selectedValue={selectedCity}
+                                onValueChange={value => {
+                                  setSelectedCity(value);
+                                  setFormData(prev => ({...prev, city: value}));
+                                }}
+                                style={styles.picker}>
+                                
+                                <Picker.Item
+                                  label="Choose a City"
+                                  value=""
+                                />
+                                {cities.map(city => (
+                                  <Picker.Item
+                                    key={city.cityId}
+                                    label={city.city}
+                                    value={city.city}
+                                  />
+                                ))}
+                              </Picker>{' '}
+                            </View>
+                          )}{' '}
+                        </>
+                      )}{' '}
+                    </View>{' '}
                     <View style={{paddingVertical: 10}}>
                       {' '}
                       <Text style={styles.sectionTitle}>Job Category</Text>{' '}
@@ -1172,13 +1237,10 @@ const JobHome = ({navigation, route}) => {
                       </TouchableOpacity>{' '}
                       <TouchableOpacity
                         style={styles.applyBtn}
-                        onPress={async () => {
+                        onPress={() => {
                           setShowFilter(false);
                           setCities([]);
-                          // Small delay to ensure UI updates before filtering
-                          setTimeout(() => {
-                            handleFilter();
-                          }, 100);
+                          handleFilter();
                         }}>
                         {' '}
                         <Text style={{color: '#fff', alignSelf: 'center'}}>
@@ -1193,16 +1255,15 @@ const JobHome = ({navigation, route}) => {
                 // ---------- JOB LIST ----------
                 <FlatList
                   ref={flatListRef}
+                  //style = {{zIndex:1}}
                   data={isFiltered ? filteredJobs : jobs}
                   keyExtractor={item => item.jobId} // ✅ use jobId, not id
                   contentContainerStyle={{paddingBottom: 60}}
-                  showsVerticalScrollIndicator={true}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode="on-drag"
-                  scrollEventThrottle={16}
+                  showsVerticalScrollIndicator={true}
+                  scrollEnabled={true}
                   bounces={true}
-                  nestedScrollEnabled={false}
-                  removeClippedSubviews={false}
                   renderItem={({item}) => (
                     <JobBox
                       item={item}
@@ -1222,12 +1283,16 @@ const JobHome = ({navigation, route}) => {
                             : 'No jobs found with applied filters.'
                           : 'No jobs found.'}
                       </Text>
+
+                      {/* if(!searchQuery){
+                        Alert.alert("Please Clear Filter First!")
+                      } */}
                       {isFiltered && (
                         <TouchableOpacity
                           style={styles.clearSearchBtn}
                           onPress={clearAllFiltersAndGoHome}>
                           <Text style={styles.clearSearchBtnText}>
-                            {searchQuery ? 'Clear Search & Show All Jobs' : 'Clear Filter & Show All Jobs'}
+                            {searchQuery ? 'Clear Filter to Search Again!' : 'Clear Filter to Search Again' }
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -1567,66 +1632,3 @@ const styles = StyleSheet.create({
 });
 
 export default JobHome;
-
-//   <View style={{paddingVertical: 10}}>
-                    //   <Text style={styles.sectionTitle}>Select State</Text>
-                    //   {loadingStates ? (
-                    //     <ActivityIndicator />
-                    //   ) : (
-                    //     <View style={styles.pickerWrapper}>
-                    //       {' '}
-                    //       <Picker
-                    //         selectedValue={selectedState}
-                    //         onValueChange={value => {
-                    //           setSelectedState(value);
-                    //           setFormData(prev => ({...prev, state: value}));
-                    //         }}
-                    //         style={styles.picker}>
-                    //         {' '}
-                    //         <Picker.Item label="Choose a State" value="" />{' '}
-                    //         {states.map(state => (
-                    //           <Picker.Item
-                    //             key={state.stateId}
-                    //             label={state.state}
-                    //             value={state.state}
-                    //           />
-                    //         ))}{' '}
-                    //       </Picker>{' '}
-                    //     </View>
-                    //   )}{' '}
-                    //   {selectedState !== '' && (
-                    //     <>
-                    //       {' '}
-                    //       <Text style={styles.sectionTitle}>
-                    //         Select City
-                    //       </Text>{' '}
-                    //       {loadingCities ? (
-                    //         <ActivityIndicator />
-                    //       ) : (
-                    //         <View style={styles.pickerWrapper}>
-                    //           {' '}
-                    //           <Picker
-                    //             selectedValue={selectedCity}
-                    //             onValueChange={value => {
-                    //               setSelectedCity(value);
-                    //               setFormData(prev => ({...prev, city: value}));
-                    //             }}
-                    //             style={styles.picker}>
-                                
-                    //             <Picker.Item
-                    //               label="Choose a City"
-                    //               value=""
-                    //             />
-                    //             {cities.map(city => (
-                    //               <Picker.Item
-                    //                 key={city.cityId}
-                    //                 label={city.city}
-                    //                 value={city.city}
-                    //               />
-                    //             ))}{' '}
-                    //           </Picker>{' '}
-                    //         </View>
-                    //       )}{' '}
-                    //     </>
-                    //   )}{' '}
-                    // </View>{' '}
