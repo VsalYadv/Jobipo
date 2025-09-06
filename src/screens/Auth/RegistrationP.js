@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BackHandler, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { BackHandler, Platform, Keyboard } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, FlatList, Pressable, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -253,11 +253,7 @@ useFocusEffect(
   // console.log('formData:', formData);
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
+    <View style={styles.container}>
       <StepIndicator2/>
       
       {/* Single ScrollView with all content */}
@@ -389,26 +385,14 @@ useFocusEffect(
                   onFocus={() => {
                     setIsJobTitleFocused(true);
                     setTimeout(() => {
-                      if (scrollViewRef.current && jobTitleInputRef.current) {
-                        jobTitleInputRef.current.measureLayout(
-                          scrollViewRef.current,
-                          (x, y) => {
-                            // Scroll to show the input with some space above, but not too much
-                            scrollViewRef.current.scrollTo({
-                              y: Math.max(0, y - 80), // Ensure we don't scroll past the top
-                              animated: true,
-                            });
-                          },
-                          () => {
-                            // Fallback if measureLayout fails
-                            scrollViewRef.current.scrollTo({
-                              y: 150,
-                              animated: true,
-                            });
-                          }
-                        );
+                      if (scrollViewRef.current) {
+                        // Simple scroll to a reasonable position for job title input
+                        scrollViewRef.current.scrollTo({
+                          y: 400, // Fixed position that works well for job title
+                          animated: true,
+                        });
                       }
-                    }, 100);
+                    }, 200);
                   }}
                   onBlur={() => {
                     setIsJobTitleFocused(false);
@@ -495,7 +479,7 @@ useFocusEffect(
             </View>
           </View>
         </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

@@ -546,7 +546,7 @@ const JobHome = ({navigation, route}) => {
     console.log('payload Jobs:', payload);
 
     try {
-      const tokenn = await AsyncStorage.getItem('Token');
+      const tokenn = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6";
       console.log('token :', tokenn);
       //const token = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
 
@@ -560,23 +560,45 @@ const JobHome = ({navigation, route}) => {
       });
 
       const result = await res.json();
-      console.log('Filtered Jobs:', result);
+      console.log('Filtered Jobs:', result.jobs);
+      console.log('Result status:', result.status);
 
       if (result.status == 1) {
-        const jobs = JSON.parse(result.msg);
+        // Check if result.jobs is already an array or needs parsing
+        let jobs;
+        if (typeof result.jobs === 'string') {
+          jobs = JSON.parse(result.jobs);
+        } else {
+          jobs = result.jobs;
+        }
+        
+        console.log('Processed jobs:', jobs);
         setFilteredJobs(jobs);
         setIsFiltered(true);
         
-        navigation.navigate('JobPage', {
-          filteredJobs: jobs,
-        });
+        // Scroll to top to show filtered results
+        if (flatListRef.current) {
+          flatListRef.current.scrollToOffset({offset: 0, animated: true});
+        }
+        
+        // Stay on the same screen and show filtered results
+        // navigation.navigate('JobPage', {
+        //   filteredJobs: jobs,
+        // });
       } else {
+        console.log('No jobs found or API error');
         setFilteredJobs([]);
         setIsFiltered(true);
         
-        navigation.navigate('JobPage', {
-          filteredJobs: [],
-        });
+        // Scroll to top to show empty results
+        if (flatListRef.current) {
+          flatListRef.current.scrollToOffset({offset: 0, animated: true});
+        }
+        
+        // Stay on the same screen and show empty results
+        // navigation.navigate('JobPage', {
+        //   filteredJobs: [],
+        // });
       }
     } catch (error) {
       console.error('Filter API error:', error);
@@ -727,14 +749,7 @@ const JobHome = ({navigation, route}) => {
 
   return (
     <>
-      <TouchableWithoutFeedback
-        onPress={() => {
-          Keyboard.dismiss();
-          setShowSuggestion(false); // hide suggestion list on outside touch
-        }}
-        accessible={false}
-        disabled={showFilter}>
-        <View style={{flex: 1}} pointerEvents={showFilter ? "box-none" : "auto"}>
+      <View style={{flex: 1}}>
           {/* <StatusBar backgroundColor='#727070ff'  barStyle="light-content" /> */}
           <View
             style={[
@@ -763,7 +778,7 @@ const JobHome = ({navigation, route}) => {
               <View style={styles.inputWithIcon}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Job Title, Keywords"
+                  placeholder="Job Title, City Name "
                   placeholderTextColor="#D0D0D0"
                   value={searchQuery}
                   onChangeText={async text => {
@@ -783,6 +798,10 @@ const JobHome = ({navigation, route}) => {
 
                     setSuggestion(filteredSuggestions);
                     setShowSuggestion(filteredSuggestions.length > 0);
+                  }}
+                  onBlur={() => {
+                    // Hide suggestions when input loses focus
+                    setTimeout(() => setShowSuggestion(false), 150);
                   }}
                 />
 
@@ -928,68 +947,7 @@ const JobHome = ({navigation, route}) => {
                     {/* Spacer for better scrolling */}
                     <View style={{height: 20, width: '100%'}} />
                     
-                    <View style={{paddingVertical: 10}}>
-                      <Text style={styles.sectionTitle}>Select State</Text>
-                      {loadingStates ? (
-                        <ActivityIndicator />
-                      ) : (
-                        <View style={styles.pickerWrapper}>
-                          {' '}
-                          <Picker
-                            selectedValue={selectedState}
-                            onValueChange={value => {
-                              setSelectedState(value);
-                              setFormData(prev => ({...prev, state: value}));
-                            }}
-                            style={styles.picker}>
-                            {' '}
-                            <Picker.Item label="Choose a State" value="" />{' '}
-                            {states.map(state => (
-                              <Picker.Item
-                                key={state.stateId}
-                                label={state.state}
-                                value={state.state}
-                              />
-                            ))}{' '}
-                          </Picker>{' '}
-                        </View>
-                      )}{' '}
-                      {selectedState !== '' && (
-                        <>
-                          {' '}
-                          <Text style={styles.sectionTitle}>
-                            Select City
-                          </Text>{' '}
-                          {loadingCities ? (
-                            <ActivityIndicator />
-                          ) : (
-                            <View style={styles.pickerWrapper}>
-                              {' '}
-                              <Picker
-                                selectedValue={selectedCity}
-                                onValueChange={value => {
-                                  setSelectedCity(value);
-                                  setFormData(prev => ({...prev, city: value}));
-                                }}
-                                style={styles.picker}>
-                                
-                                <Picker.Item
-                                  label="Choose a City"
-                                  value=""
-                                />
-                                {cities.map(city => (
-                                  <Picker.Item
-                                    key={city.cityId}
-                                    label={city.city}
-                                    value={city.city}
-                                  />
-                                ))}{' '}
-                              </Picker>{' '}
-                            </View>
-                          )}{' '}
-                        </>
-                      )}{' '}
-                    </View>{' '}
+                  
                     <View style={{paddingVertical: 10}}>
                       {' '}
                       <Text style={styles.sectionTitle}>Job Category</Text>{' '}
@@ -1214,10 +1172,13 @@ const JobHome = ({navigation, route}) => {
                       </TouchableOpacity>{' '}
                       <TouchableOpacity
                         style={styles.applyBtn}
-                        onPress={() => {
+                        onPress={async () => {
                           setShowFilter(false);
                           setCities([]);
-                          handleFilter();
+                          // Small delay to ensure UI updates before filtering
+                          setTimeout(() => {
+                            handleFilter();
+                          }, 100);
                         }}>
                         {' '}
                         <Text style={{color: '#fff', alignSelf: 'center'}}>
@@ -1235,6 +1196,13 @@ const JobHome = ({navigation, route}) => {
                   data={isFiltered ? filteredJobs : jobs}
                   keyExtractor={item => item.jobId} // ✅ use jobId, not id
                   contentContainerStyle={{paddingBottom: 60}}
+                  showsVerticalScrollIndicator={true}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                  scrollEventThrottle={16}
+                  bounces={true}
+                  nestedScrollEnabled={false}
+                  removeClippedSubviews={false}
                   renderItem={({item}) => (
                     <JobBox
                       item={item}
@@ -1283,7 +1251,6 @@ const JobHome = ({navigation, route}) => {
 
           <JobMenu />
         </View>
-      </TouchableWithoutFeedback>
     </>
   );
 };
@@ -1600,3 +1567,66 @@ const styles = StyleSheet.create({
 });
 
 export default JobHome;
+
+//   <View style={{paddingVertical: 10}}>
+                    //   <Text style={styles.sectionTitle}>Select State</Text>
+                    //   {loadingStates ? (
+                    //     <ActivityIndicator />
+                    //   ) : (
+                    //     <View style={styles.pickerWrapper}>
+                    //       {' '}
+                    //       <Picker
+                    //         selectedValue={selectedState}
+                    //         onValueChange={value => {
+                    //           setSelectedState(value);
+                    //           setFormData(prev => ({...prev, state: value}));
+                    //         }}
+                    //         style={styles.picker}>
+                    //         {' '}
+                    //         <Picker.Item label="Choose a State" value="" />{' '}
+                    //         {states.map(state => (
+                    //           <Picker.Item
+                    //             key={state.stateId}
+                    //             label={state.state}
+                    //             value={state.state}
+                    //           />
+                    //         ))}{' '}
+                    //       </Picker>{' '}
+                    //     </View>
+                    //   )}{' '}
+                    //   {selectedState !== '' && (
+                    //     <>
+                    //       {' '}
+                    //       <Text style={styles.sectionTitle}>
+                    //         Select City
+                    //       </Text>{' '}
+                    //       {loadingCities ? (
+                    //         <ActivityIndicator />
+                    //       ) : (
+                    //         <View style={styles.pickerWrapper}>
+                    //           {' '}
+                    //           <Picker
+                    //             selectedValue={selectedCity}
+                    //             onValueChange={value => {
+                    //               setSelectedCity(value);
+                    //               setFormData(prev => ({...prev, city: value}));
+                    //             }}
+                    //             style={styles.picker}>
+                                
+                    //             <Picker.Item
+                    //               label="Choose a City"
+                    //               value=""
+                    //             />
+                    //             {cities.map(city => (
+                    //               <Picker.Item
+                    //                 key={city.cityId}
+                    //                 label={city.city}
+                    //                 value={city.city}
+                    //               />
+                    //             ))}{' '}
+                    //           </Picker>{' '}
+                    //         </View>
+                    //       )}{' '}
+                    //     </>
+                    //   )}{' '}
+                    // </View>{' '}

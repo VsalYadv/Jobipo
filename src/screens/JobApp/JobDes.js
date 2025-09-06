@@ -190,13 +190,18 @@ const salary = job.salaryType === 'Incentive-Based'
   <Text style={{ color: '#FF8D53' }}>Industry: </Text>
   {(() => {
     if (job?.JobIndustry) {
-  return job.JobIndustry; 
-} else if (job?.FirmCategory) {
-  const parsed = JSON.parse(job.FirmCategory);
-  return `${parsed.constitution_of_business || 'NA'} - ${parsed.nature_of_core_business_activity_description || 'NA'}`;
-} else {
-  return 'NA';
-}
+      return job.JobIndustry; 
+    } else if (job?.FirmCategory) {
+      try {
+        const parsed = JSON.parse(job.FirmCategory);
+        return `${parsed.constitution_of_business || 'NA'} - ${parsed.nature_of_core_business_activity_description || 'NA'}`;
+      } catch (error) {
+        console.warn('Invalid JSON in job.FirmCategory:', error);
+        return job.FirmCategory || 'NA';
+      }
+    } else {
+      return 'NA';
+    }
   })()}
 </Text>
 

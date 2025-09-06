@@ -148,16 +148,16 @@ const FavJob = ({ navigation }) => {
     const statusMeta = statusId ? getStatus(statusId) : null;
 
     return (
-      <View style={styles.jobBox}>
-        <Pressable
-          style={styles.topLeftArrow}
-          onPress={() => navigation.navigate('JobDes', { job: item })} // ✅ keep it consistent with AppliedJob
-        >
+      <Pressable 
+        style={styles.jobBox}
+        onPress={() => navigation.navigate('JobDes', { job: item })}
+      >
+        <View style={styles.topLeftArrow}>
           <Image
             source={require('../../../assets/Image/icons/next.png')}
             style={styles.jobImg}
           />
-        </Pressable>
+        </View>
 
         <View style={styles.row}>
           <Image
@@ -202,7 +202,12 @@ const FavJob = ({ navigation }) => {
           <Text style={styles.salary}>{item.jobType}</Text>
           <Text style={styles.salary}>{item.genderPreferance}</Text>
           <Text style={styles.salary}>Exp. {item.experienceLevel}</Text>
-          <TouchableOpacity onPress={() => handleToggleFavorite(item.jobId)}>
+          <TouchableOpacity 
+            onPress={(e) => {
+              e.stopPropagation();
+              handleToggleFavorite(item.jobId);
+            }}
+          >
             {isFavorite ? <HeartFilledOrangeIcon /> : <HeartIcon />}
           </TouchableOpacity>
         </View>
@@ -232,7 +237,7 @@ const FavJob = ({ navigation }) => {
             </View>
           </View>
         )}
-      </View>
+      </Pressable>
     );
   };
 

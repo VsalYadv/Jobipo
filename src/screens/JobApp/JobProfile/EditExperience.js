@@ -320,7 +320,7 @@ useFocusEffect(
             <Text style={styles.label}> Job Title</Text>
               <TextInput
                 style={styles.input}
-                maxLength={28}
+                maxLength={24}
                 placeholder="Enter Job Title"
                 placeholderTextColor={isDarkMode ? '#555' : '#555'}
                 value={formData.jobTitle}

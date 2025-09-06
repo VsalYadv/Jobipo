@@ -381,10 +381,13 @@ const GetDataFunc = async (reset = false) => {
 
 useFocusEffect(
   useCallback(() => {
-    if (route.params?.filteredJobs && route.params.filteredJobs.length > 0) {
+    console.log('JobPage useFocusEffect - route.params:', route.params);
+    if (route.params?.filteredJobs) {
       console.log('Filtered jobs received:', route.params.filteredJobs);
+      console.log('Filtered jobs length:', route.params.filteredJobs.length);
       setJobs(route.params.filteredJobs);
     } else {
+      console.log('No filtered jobs, calling GetDataFunc');
       GetDataFunc(true);
     }
   }, [route.params, searchQuery])
@@ -626,15 +629,17 @@ useEffect(() => {
     const jobs = JSON.parse(result.msg); 
     setJobs(jobs);
   
-    navigation.navigate('JobPage', {
-      filteredJobs: jobs
-    });
+    // Stay on the same screen and show filtered results
+    // navigation.navigate('JobPage', {
+    //   filteredJobs: jobs
+    // });
   } else {
     setJobs([]);
   
-    navigation.navigate('JobPage', {
-      filteredJobs: []
-    });
+    // Stay on the same screen and show empty results
+    // navigation.navigate('JobPage', {
+    //   filteredJobs: []
+    // });
   }
     } catch (error) {
       console.error('Filter API error:', error);
@@ -666,13 +671,6 @@ useEffect(() => {
 
   return (
     <>
-      <TouchableWithoutFeedback
-    onPress={() => {
-      Keyboard.dismiss();
-      setShowSuggestion(false);
-    }}
-  >
-
         <View style={{ flex: 1 }}>       
       <TopHeaderJob/>    
       <View style={styles.container}>
@@ -969,9 +967,12 @@ values={[formData.age[0], formData.age[1]]}
                   <Text style={styles.clearBtnText}>Clear Filter</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.applyBtn} onPress={() => {
+                <TouchableOpacity style={styles.applyBtn} onPress={async () => {
                   setShowFilter(false);
-                  handleFilter();
+                  // Small delay to ensure UI updates before filtering
+                  setTimeout(() => {
+                    handleFilter();
+                  }, 100);
                 }}>
                   <Text style={{ color: '#fff',alignSelf:'center', }}>Apply Filter</Text>
                 </TouchableOpacity>
@@ -1043,8 +1044,7 @@ values={[formData.age[0], formData.age[1]]}
       
       </View>
       <JobMenu />
-      </View>  
-        </TouchableWithoutFeedback>
+      </View>
 
     </>
   );

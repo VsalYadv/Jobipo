@@ -70,7 +70,7 @@ const AppliedJobHeader = () => {
       subLink: [''],
     },
     {
-      title: 'Favorite Jobs',
+      title: 'Favourite Jobs',
       icon_active: <HeartFilledOrangeIconNew />,
       icon_inactive: <HeartFilledWhiteIcon />,
       link: 'FavJobs',

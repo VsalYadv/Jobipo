@@ -69,6 +69,7 @@ const Register = ({ navigation }) => {
 
   const FinalSubmit = async () => {
     if (fullName !== '' && emailID !== '' && contactNumber !== '') {
+      
 
       
       // Before sending OTP, check if terms are accepted
@@ -163,7 +164,8 @@ const Register = ({ navigation }) => {
     if (ResData.success) {
       // Alert.alert('OTP Verified Successfully');
       await AsyncStorage.setItem('UserID', String(ResData.userId));
-       navigation.navigate('RegistrationP');
+      navigation.navigate('RegistrationP');
+       
      // add line here i just remove to test plz add navigate line here back       kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
       return true;
     } else {
@@ -174,6 +176,7 @@ const Register = ({ navigation }) => {
     console.log('checkOtp error:', err);
     Alert.alert('An error occurred while verifying OTP.');
     return false;
+    
   }
 };
 
@@ -405,6 +408,7 @@ useEffect(() => {
                     <View style={styles.fieldContainer}>
                       <TextInput
                         value={contactNumber}
+                        maxLength={10}
                         onChangeText={text => {
                           const cleanedText = text.replace(/[^0-9]/g, '');
                           if (cleanedText.length <= 10) {

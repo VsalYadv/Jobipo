@@ -661,6 +661,7 @@ useFocusEffect(
     const fetchProfile = async () => {
       try {
         const userID = await AsyncStorage.getItem('UserID');
+        console.log("userID",userID)
 
         if (!userID) {
           Alert.alert('Error', 'User ID not found. Please log in again.');

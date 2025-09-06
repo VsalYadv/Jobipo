@@ -220,7 +220,7 @@ const degreeOptions =
             </Picker>
           </View> */}
 
-          <Text style={styles.labelPicker}>Course Name</Text>
+          <Text style={styles.labelPicker}>Course Name <Text style={styles.infoText}>(Only Applicable for Grad & PG)</Text></Text>
 <View style={styles.pickerWrapper}>
   <Picker
     enabled={showDegreePicker}
@@ -371,6 +371,7 @@ const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: "#F5F4FD", flex: 1 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   labelPicker: { fontSize: 15, color: "#535353", fontWeight: "500", marginTop: 15, marginBottom: 1 },
+  infoText: { fontSize: 12, color: "#999", fontWeight: "400" },
   label: { fontSize: 14, color: "#535353", fontWeight: "500", marginTop: 10, marginBottom: 8 },
   input: {  backgroundColor: "#ffffff", borderRadius: 8, padding: 10 },
   pickerWrapper: {
